@@ -2,55 +2,55 @@ provider "aws" {
   region = "ap-south-1"
 }
 
-resource "aws_vpc" "love_vpc" {
+resource "aws_vpc" "ramesh_vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name = "love-vpc"
+    Name = "ramesh-vpc"
   }
 }
 
-resource "aws_subnet" "love_subnet" {
+resource "aws_subnet" "ramesh_subnet" {
   count = 2
-  vpc_id                  = aws_vpc.love_vpc.id
-  cidr_block              = cidrsubnet(aws_vpc.love_vpc.cidr_block, 8, count.index)
+  vpc_id                  = aws_vpc.ramesh_vpc.id
+  cidr_block              = cidrsubnet(aws_vpc.ramesh_vpc.cidr_block, 8, count.index)
   availability_zone       = element(["ap-south-1a", "ap-south-1b"], count.index)
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "love-subnet-${count.index}"
+    Name = "ramesh-subnet-${count.index}"
   }
 }
 
-resource "aws_internet_gateway" "love_igw" {
-  vpc_id = aws_vpc.love_vpc.id
+resource "aws_internet_gateway" "ramesh_igw" {
+  vpc_id = aws_vpc.ramesh_vpc.id
 
   tags = {
-    Name = "love-igw"
+    Name = "ramesh-igw"
   }
 }
 
-resource "aws_route_table" "love_route_table" {
-  vpc_id = aws_vpc.love_vpc.id
+resource "aws_route_table" "ramesh_route_table" {
+  vpc_id = aws_vpc.ramesh_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.love_igw.id
+    gateway_id = aws_internet_gateway.ramesh_igw.id
   }
 
   tags = {
-    Name = "love-route-table"
+    Name = "ramesh-route-table"
   }
 }
 
 resource "aws_route_table_association" "a" {
   count          = 2
-  subnet_id      = aws_subnet.love_subnet[count.index].id
-  route_table_id = aws_route_table.love_route_table.id
+  subnet_id      = aws_subnet.ramesh_subnet[count.index].id
+  route_table_id = aws_route_table.ramesh_route_table.id
 }
 
-resource "aws_security_group" "love_cluster_sg" {
-  vpc_id = aws_vpc.love_vpc.id
+resource "aws_security_group" "ramesh_cluster_sg" {
+  vpc_id = aws_vpc.ramesh_vpc.id
 
   egress {
     from_port   = 0
@@ -60,12 +60,12 @@ resource "aws_security_group" "love_cluster_sg" {
   }
 
   tags = {
-    Name = "love-cluster-sg"
+    Name = "ramesh-cluster-sg"
   }
 }
 
-resource "aws_security_group" "love_node_sg" {
-  vpc_id = aws_vpc.love_vpc.id
+resource "aws_security_group" "ramesh_node_sg" {
+  vpc_id = aws_vpc.ramesh_vpc.id
 
   ingress {
     from_port   = 0
@@ -82,25 +82,25 @@ resource "aws_security_group" "love_node_sg" {
   }
 
   tags = {
-    Name = "love-node-sg"
+    Name = "ramesh-node-sg"
   }
 }
 
-resource "aws_eks_cluster" "love" {
-  name     = "love-cluster"
-  role_arn = aws_iam_role.love_cluster_role.arn
+resource "aws_eks_cluster" "ramesh" {
+  name     = "ramesh-cluster"
+  role_arn = aws_iam_role.ramesh_cluster_role.arn
 
   vpc_config {
-    subnet_ids         = aws_subnet.love_subnet[*].id
-    security_group_ids = [aws_security_group.love_cluster_sg.id]
+    subnet_ids         = aws_subnet.ramesh_subnet[*].id
+    security_group_ids = [aws_security_group.ramesh_cluster_sg.id]
   }
 }
 
-resource "aws_eks_node_group" "love" {
-  cluster_name    = aws_eks_cluster.love.name
-  node_group_name = "love-node-group"
-  node_role_arn   = aws_iam_role.love_node_group_role.arn
-  subnet_ids      = aws_subnet.love_subnet[*].id
+resource "aws_eks_node_group" "ramesh" {
+  cluster_name    = aws_eks_cluster.ramesh.name
+  node_group_name = "ramesh-node-group"
+  node_role_arn   = aws_iam_role.ramesh_node_group_role.arn
+  subnet_ids      = aws_subnet.ramesh_subnet[*].id
 
   scaling_config {
     desired_size = 3
@@ -112,12 +112,12 @@ resource "aws_eks_node_group" "love" {
 
   remote_access {
     ec2_ssh_key = var.ssh_key_name
-    source_security_group_ids = [aws_security_group.love_node_sg.id]
+    source_security_group_ids = [aws_security_group.ramesh_node_sg.id]
   }
 }
 
-resource "aws_iam_role" "love_cluster_role" {
-  name = "love-cluster-role"
+resource "aws_iam_role" "ramesh_cluster_role" {
+  name = "ramesh-cluster-role"
 
   assume_role_policy = <<EOF
 {
@@ -135,13 +135,13 @@ resource "aws_iam_role" "love_cluster_role" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "love_cluster_role_policy" {
-  role       = aws_iam_role.love_cluster_role.name
+resource "aws_iam_role_policy_attachment" "ramesh_cluster_role_policy" {
+  role       = aws_iam_role.ramesh_cluster_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
-resource "aws_iam_role" "love_node_group_role" {
-  name = "love-node-group-role"
+resource "aws_iam_role" "ramesh_node_group_role" {
+  name = "ramesh-node-group-role"
 
   assume_role_policy = <<EOF
 {
@@ -159,17 +159,17 @@ resource "aws_iam_role" "love_node_group_role" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "love_node_group_role_policy" {
-  role       = aws_iam_role.love_node_group_role.name
+resource "aws_iam_role_policy_attachment" "ramesh_node_group_role_policy" {
+  role       = aws_iam_role.ramesh_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
-resource "aws_iam_role_policy_attachment" "love_node_group_cni_policy" {
-  role       = aws_iam_role.love_node_group_role.name
+resource "aws_iam_role_policy_attachment" "ramesh_node_group_cni_policy" {
+  role       = aws_iam_role.ramesh_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
-resource "aws_iam_role_policy_attachment" "love_node_group_registry_policy" {
-  role       = aws_iam_role.love_node_group_role.name
+resource "aws_iam_role_policy_attachment" "ramesh_node_group_registry_policy" {
+  role       = aws_iam_role.ramesh_node_group_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
